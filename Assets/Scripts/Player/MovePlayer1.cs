@@ -4,68 +4,85 @@ using UnityEngine;
 public class MovePlayer1 : MonoBehaviour
 {
     public float moveSpeed;
+    public float climbSpeed;
     public float jumpForce;
 
     public bool isJumping;
     public bool isGrounded;
+    public bool isClimbing;
 
     public Transform groundCheck;
-    public float groundcheckRadius;
+    public float groundCheckRadius;
     public LayerMask collisionLayers;
 
     public Rigidbody2D rb;
     public Animator animator;
     public SpriteRenderer spriteRenderer;
+    public CapsuleCollider2D playerCollider;
 
     public Vector3 velocity = Vector3.zero;
+    private float horizontalMovement;
+    private float verticalMovement;
 
     public bool crouch = false;
 
+    public static MovePlayer1 instance;
+
+    private void Awake()
+    {
+        if (instance != null)
+        {
+            Debug.LogWarning("Il n'y a plus d'instance de MovePlayer1 dans la scène");
+            return;
+        }
+
+        instance = this;
+    }
+
     void Update()
     {
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundcheckRadius, collisionLayers);
-        if (isGrounded)
-        {
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                rb.velocity = Vector2.up * jumpForce;
-            }
-        }
+        horizontalMovement = Input.GetAxis("Horizontal") * moveSpeed * Time.fixedDeltaTime;
+        verticalMovement = Input.GetAxis("Vertical") * climbSpeed * Time.fixedDeltaTime;
 
-        rb.velocity += Physics2D.gravity * Time.deltaTime;
-        if (Input.GetKey(KeyCode.RightArrow))
+        if (Input.GetButtonDown("Jump") && isGrounded && !isClimbing)
         {
-            //Vector2.right, juste le vector (1,0)
-            //Time.deltaTime, temps de diff entre la frame précedente et maintenant
-            //Vector2 decalage = Vector2.right * max_speed * Time.deltaTime;
-            //rd.position = (Vector2) transform.position + decalage;
-            rb.velocity = new Vector2(moveSpeed, rb.velocity.y);
+            isJumping = true;
         }
-
-        if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            //Vector2.left, juste le vector (1,0)
-            //Time.deltaTime, temps de diff entre la frame précedente et maintenant
-            //Vector2 decalage = Vector2.left * max_speed * Time.deltaTime;
-            //rd.position = (Vector2)transform.position + decalage;
-            rb.velocity = new Vector2(-moveSpeed, rb.velocity.y);
-        }
-
-
-        if (Input.GetKey(KeyCode.DownArrow))
-        {
-            crouch = true;
-        }
-        else
-        {
-            crouch = false;
-        }
-        animator.SetBool("crouch", crouch);
 
         Flip(rb.velocity.x);
 
         float characterVelocity = Mathf.Abs(rb.velocity.x);
         animator.SetFloat("Speed", characterVelocity);
+        animator.SetBool("isClimbing", isClimbing);
+    }
+
+
+    void FixedUpdate()
+    {
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, collisionLayers);
+        MovePlayer(horizontalMovement, verticalMovement);
+    }
+
+    void MovePlayer(float _horizontalMovement, float _verticalMovement)
+    {
+        if (!isClimbing)
+        {
+            Vector3 targetVelocity = new Vector2(_horizontalMovement, rb.velocity.y);
+            rb.velocity = Vector3.SmoothDamp(rb.velocity, targetVelocity, ref velocity, .05f);
+
+            if (isJumping)
+            {
+                rb.AddForce(new Vector2(0f, jumpForce));
+                isJumping = false;
+            }
+        }
+        else
+        {
+            //déplacement vertical
+            Vector3 targetVelocity = new Vector2(0, verticalMovement);
+            rb.velocity = Vector3.SmoothDamp(rb.velocity, targetVelocity, ref velocity, .05f);
+        }
+
     }
 
 
@@ -83,6 +100,6 @@ public class MovePlayer1 : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(groundCheck.position, groundcheckRadius);
+        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
 }

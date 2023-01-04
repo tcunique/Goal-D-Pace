@@ -6,7 +6,8 @@ public class PickupObject : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
-            Inventory.instance.AddGems(1); 
+            Inventory.instance.AddGems(1);
+            CurrentSceneManager.instance.GemsPickedUpInThisCount++; 
             Destroy(gameObject);
         }
     }

@@ -12,7 +12,24 @@ public class PlayerHealth : MonoBehaviour
 
     public SpriteRenderer graphics;
 
-    public HealthBar healthbar; 
+    public HealthBar healthbar;
+
+    public float HurtTime = 0.5f;
+    public bool isHurt = false;
+    public Animator animator;
+
+    public static PlayerHealth instance;
+
+    private void Awake()
+    {
+        if (instance != null)
+        {
+            Debug.LogWarning("Il n'y a plus d'instance de PlayerHealth dans la scène");
+            return;
+        }
+
+        instance = this;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -26,7 +43,7 @@ public class PlayerHealth : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.H))
         {
-            TakeDamage(20);
+            TakeDamage(60);
         }
     }
 
@@ -35,13 +52,64 @@ public class PlayerHealth : MonoBehaviour
         //Si le joueur n'est pas invincible, permet de prendre des dégâts
         if (!isInvincible)
         {
-            currentHealth -= damage;
-            healthbar.SetHealth(currentHealth);
-            isInvincible = true;
+            if (currentHealth > 0)
+            {
+                currentHealth -= damage;
+                healthbar.SetHealth(currentHealth);
+                isInvincible = true;
 
-            //car c'est un coroutine cette fonction (IEnumerator)
-            StartCoroutine(InvicibilityFlash());
-            StartCoroutine(HandleInvincibilityDelay());
+                // vérifier si le joueur est toujours vivant
+                if (currentHealth <= 0)
+                {
+                    Die();
+                    return;
+                }
+
+                isHurt = true;
+                animator.SetBool("hurt", isHurt);
+
+                //car c'est un coroutine cette fonction (IEnumerator)
+                StartCoroutine(InvicibilityFlash());
+                StartCoroutine(HandleInvincibilityDelay());
+                StartCoroutine(HandleHurtDelay());
+            }
+        }
+    }
+
+    public void Die()
+    {
+        Debug.Log("Le joueur est éliminée");
+        // bloquer  les mouvements du personnage
+        // Jouer l'animation d'élimination
+        // empêcher les interactions physiques avec les autres éléments de la scène
+
+        MovePlayer1.instance.enabled = false;
+        MovePlayer1.instance.animator.SetTrigger("Death");
+        MovePlayer1.instance.rb.bodyType = RigidbodyType2D.Kinematic;
+        MovePlayer1.instance.playerCollider.enabled = false;
+        GameOverManager.instance.OnPlayerDeath();
+    }
+
+    public void Respawn()
+    {
+        MovePlayer1.instance.enabled = true;
+        MovePlayer1.instance.animator.SetTrigger("Respawn");
+        MovePlayer1.instance.rb.bodyType = RigidbodyType2D.Dynamic;
+        MovePlayer1.instance.playerCollider.enabled = true;
+        currentHealth = maxHealth;
+        healthbar.SetHealth(currentHealth);
+    }
+
+    public void GiveHealth(int health)
+    {
+        if ((currentHealth+health) > 100)
+        {
+            currentHealth = 100;
+            healthbar.SetHealth(currentHealth);
+        } else
+        {
+            currentHealth += health;
+            healthbar.SetHealth(currentHealth);
         }
     }
 
@@ -61,6 +129,13 @@ public class PlayerHealth : MonoBehaviour
             //On remet un délai car il n'y a pas de délai entre les tours de while
             yield return new WaitForSeconds(InvincibilityFlashDelay);
         }
+    }
+
+    public IEnumerator HandleHurtDelay()
+    {
+        yield return new WaitForSeconds(HurtTime);
+        isHurt = false;
+        animator.SetBool("hurt", isHurt);
     }
 
     public IEnumerator HandleInvincibilityDelay()
