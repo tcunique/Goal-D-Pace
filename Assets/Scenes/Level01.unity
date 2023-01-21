@@ -827,8 +827,8 @@ CapsuleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.0151607515, y: -0.050898552}
-  m_Size: {x: 0.18218155, y: 0.22409868}
+  m_Offset: {x: -0.013865635, y: -0.058669}
+  m_Size: {x: 0.17959133, y: 0.20855778}
   m_Direction: 0
 --- !u!1 &211140000
 GameObject:
@@ -2525,7 +2525,7 @@ Grid:
   m_GameObject: {fileID: 1039069862}
   m_Enabled: 1
   m_CellSize: {x: 1, y: 1, z: 0}
-  m_CellGap: {x: 0, y: 0, z: 0}
+  m_CellGap: {x: -0.001, y: -0.001, z: -0}
   m_CellLayout: 0
   m_CellSwizzle: 0
 --- !u!4 &1039069864
